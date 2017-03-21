@@ -1,0 +1,10 @@
+# GMT common arguments shelf
+-Bf0.05a0.1:frequency (mHz):/f5a50:Q::.Normal mode frequencies for @-O@-S@-3@-, @-O@-T@-4@-, @-O@-S@-4@-, @-O@-T@-5@-:WSne
+-JX10/10
+-R1/2/1/2
+-y7
+-jX10/10
+EOF
+X5.0/5.0
+EOF
+OF

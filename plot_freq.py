@@ -1,20 +1,32 @@
 import numpy as np
 import matplotlib.pyplot as plt
 
-def plot_freq(outfile=None):
-	data = np.loadtxt('omega.dat')
+def plot_freq(infile=None, outfile=None, format=None, newfigure=True, marker='.', size=1, label=None):
+	data = np.loadtxt(infile)
 	data = data.transpose()
-	fig, ax = plt.subplots()
-
+	plt.ion()
+	if newfigure:
+		fig, ax = plt.subplots()
+	else:
+		ax = plt.gca()
+		fig= plt.gcf()
 
 	ax.set_title('Normal mode frequencies for $_0S_{3}$, $_0S_{4}$, $_0T_{3}$, $_0T_{4}$')
 	ax.set_xlabel('frequency (mHz)')
 	ax.set_ylabel('Q')
 
-	ax.plot(data[0], data[1], 'x' )
-	fig.set_size_inches(9,7)
+	ax.scatter(data[0], data[1], s=size, label=label)
+	ax.legend()
+	fig.set_size_inches(6,5)
 	if outfile:
-		fig.savefig(outfile + '.ps', dpi=400, orientation='portrait', format='ps')	
-		plt.close("all")
+		if not format:
+			format = outfile.split('.')[::-1][0]
+			
+		if format in plt.gcf().canvas.get_supported_filetypes():
+			plt.ioff()
+			fig.savefig(outfile + '.' + format, dpi=400, orientation='landscape', format=format)	
+			plt.close("all")
 	else:
+		print('No output format specified')
 		plt.show()
+		plt.ioff()
