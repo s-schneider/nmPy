@@ -5,7 +5,9 @@ import matplotlib.gridspec as gridspec
 
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-def plot_freq(infile, outfile=None, newfigure=True, marker='.', size=1, fig_size=[7,10], multiplot=False, limits=[[1.855, 1.87],[321, 323]], title=None):
+def plot_freq(infile, outfile=None, newfigure=True, marker='D', size=10, 
+				fig_size=[7,10], multiplot=False, limits=[[1.855, 1.87],[321, 323]], 
+				ticks=[None, None], title=None, papertype='A4', spacing=True):
 	"""
 	param	infile:	filename or list of filenames
 	type	infile:	string or list of strings
@@ -35,14 +37,14 @@ def plot_freq(infile, outfile=None, newfigure=True, marker='.', size=1, fig_size
 					j = 1
 				i = int(i/2.)
 
-				gs = gridspec.GridSpec( int(np.ceil(flen/2)) , 2 ) 
+				gs = gridspec.GridSpec( int(np.ceil(flen/2)), 2 ) 
 				
 				title_tmp = file.split("_")
-				model 	= title_tmp[1]
-
 				title_tmp.reverse()
-				ellip 	= int(title_tmp[0].split('.')[0][0])
-				rot		= int(title_tmp[0].split('.')[0][2])
+
+				model 	= title_tmp[3]
+				ellip 	= int(title_tmp[0].split('.')[0])
+				rot		= int(title_tmp[1])
 				
 				if ellip == 0 :
 					ellip = 'off'
@@ -54,22 +56,27 @@ def plot_freq(infile, outfile=None, newfigure=True, marker='.', size=1, fig_size
 				else:
 					rot = 'on'
 
-				stitle 	= model + ", " + "rot. " + rot + ", ellip." + ellip
+				stitle 	= model + ", " + "rot. " + rot + ", ellip. " + ellip
 
-				_domultiplot(data, i, j, gs, marker=marker, size=size, title=stitle, label=None,  limits=limits)
+				_domultiplot(data, i, j, gs, marker=marker, size=size, title=stitle, label=None,  limits=limits, ticks=ticks)
 
 			else:
 				_doplot(data, newfigure=False, marker=marker, size=size, label=file, limits=limits)
 
 		fig = plt.gcf()
-		fig.tight_layout()
 
-		if multiplot: plt.suptitle(title)
+		if spacing:
+			fig.tight_layout(w_pad=.6, h_pad=.4)
 
-		fig.set_size_inches(fig_size[0], fig_size[1])
+		if multiplot: 
+			fig.suptitle(title)
+
+		fig.set_size_inches(fig_size)
+
+		plt.subplots
 
 		if outfile:
-			fig.savefig(outfile, dpi=400, orientation='portrait')	
+			fig.savefig(outfile, dpi=400, orientation='portrait', papertype=papertype) #, bbox_extra_artis=(suptitle,)) #, bbox_inches="tight")	
 			plt.close("all")
 
 		else:
@@ -88,36 +95,48 @@ def _doplot(data, newfigure=True, marker='.', size=1, label=None, limits=None):
 		ax.set_title('Normal mode frequencies for $_0S_{3}$, $_0S_{4}$, $_0T_{3}$, $_0T_{4}$')
 		ax.set_xlabel('frequency (mHz)')
 		ax.set_ylabel('Q')
-		ax.set_xlim(limits[0])
-		ax.set_ylim(limits[1])
+		if limits:
+			ax.set_xlim(limits[0])
+			ax.set_ylim(limits[1])
 		ax.scatter(data[0], data[1], s=size, label=label, marker=marker)
 		ax.legend()
 
  
-def _domultiplot(data, x, y, gs, marker='.', size=1, title=None, label=None, limits=None):
+def _domultiplot(data, x, y, gs, marker='.', size=1, title=None, label=None, limits=None, ticks=None):
 	
 	ax = plt.subplot(gs[x, y])
 	ax.set_title(title)
-
-	XmajorLocator = MultipleLocator(0.005)
-	XmajorFormatter = FormatStrFormatter('%1.3f')
-	XminorLocator = MultipleLocator(0.001)
-
-	ax.set_xlabel('frequency (mHz)')
-	ax.set_xlim(limits[0])
-	ax.xaxis.set_major_locator(XmajorLocator)
-	ax.xaxis.set_major_formatter(XmajorFormatter)
-	ax.xaxis.set_minor_locator(XminorLocator)
-
-	YmajorLocator = MultipleLocator(0.5)
-	YmajorFormatter = FormatStrFormatter('%1.3f')
-	YminorLocator = MultipleLocator(0.1)
-
 	ax.set_ylabel('Q')
-	ax.set_ylim(limits[1])
-	ax.yaxis.set_major_locator(YmajorLocator)
-	ax.yaxis.set_major_formatter(YmajorFormatter)
-	ax.yaxis.set_minor_locator(YminorLocator)
+	ax.set_xlabel('frequency (mHz)')
+
+
+
+	if limits:
+		if limits[0]:
+			ax.set_xlim(limits[0])
+
+		if ticks[0]:
+			XmajorLocator = MultipleLocator(ticks[0][0])
+			XmajorFormatter = FormatStrFormatter('%1.3f')
+			XminorLocator = MultipleLocator(ticks[0][1])
+			ax.xaxis.set_major_locator(XmajorLocator)
+			ax.xaxis.set_major_formatter(XmajorFormatter)
+			ax.xaxis.set_minor_locator(XminorLocator)
+
+		if limits[1]:
+			ax.set_ylim(limits[1])
+
+		if ticks[1]:
+			YmajorLocator = MultipleLocator(ticks[1][0])
+			YmajorFormatter = FormatStrFormatter('%1.1f')
+			YminorLocator = MultipleLocator(ticks[1][1])
+			ax.yaxis.set_major_locator(YmajorLocator)
+			ax.yaxis.set_major_formatter(YmajorFormatter)
+			ax.yaxis.set_minor_locator(YminorLocator)
+
+	
+		
+		
 
 	plt.scatter(data[0], data[1], s=size, label=label, marker=marker)
 

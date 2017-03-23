@@ -7,6 +7,8 @@ def read_dat_folder(folder):
 
 	for file in tmp_l:
 		if file.endswith('.dat'):
+			file = folder + file
 			flist.append(file)
+	flist.sort()
 
 	return flist
