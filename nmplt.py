@@ -46,19 +46,25 @@ def plot_freq(infile, outfile=None, newfigure=True, marker='D', size=10,
 				ellip 	= int(title_tmp[0].split('.')[0])
 				rot		= int(title_tmp[1])
 				
-				if ellip == 0 :
-					ellip = 'off'
+				if ellip == 0 and rot == 0:
+
+					stitle = 'SNREI'
+
 				else:
-					ellip = 'on'
 
-				if rot == 0:
-					rot = 'off'
-				else:
-					rot = 'on'
+					if ellip == 0 :
+						ellip = ''
+					else:
+						ellip = ' + ellip.'
 
-				stitle 	= model + ", " + "rot. " + rot + ", ellip. " + ellip
+					if rot == 0:
+						rot = ''
+					else:
+						rot = ' + rot.'
 
-				_domultiplot(data, i, j, gs, marker=marker, size=size, title=stitle, label=None,  limits=limits, ticks=ticks)
+					stitle = model + rot + ellip
+
+				_domultiplot(data, i, j, gs, marker=marker, size=size, title=stitle, label=None,  limits=limits, ticks=ticks, newfigure=newfigure)
 
 			else:
 				_doplot(data, newfigure=False, marker=marker, size=size, label=file, limits=limits)
@@ -83,7 +89,7 @@ def plot_freq(infile, outfile=None, newfigure=True, marker='D', size=10,
 			plt.ion()
 			print('No output format specified')
 			plt.show()
-			plt.ioff()
+			#plt.ioff()
 
 def _doplot(data, newfigure=True, marker='.', size=1, label=None, limits=None):
 		if newfigure:
@@ -102,14 +108,13 @@ def _doplot(data, newfigure=True, marker='.', size=1, label=None, limits=None):
 		ax.legend()
 
  
-def _domultiplot(data, x, y, gs, marker='.', size=1, title=None, label=None, limits=None, ticks=None):
+def _domultiplot(data, x, y, gs, marker='.', size=1, title=None, label=None, limits=None, ticks=None, newfigure=True):
 	
+
 	ax = plt.subplot(gs[x, y])
 	ax.set_title(title)
 	ax.set_ylabel('Q')
 	ax.set_xlabel('frequency (mHz)')
-
-
 
 	if limits:
 		if limits[0]:
@@ -134,10 +139,10 @@ def _domultiplot(data, x, y, gs, marker='.', size=1, title=None, label=None, lim
 			ax.yaxis.set_major_formatter(YmajorFormatter)
 			ax.yaxis.set_minor_locator(YminorLocator)
 
-	
-		
+
 		
 
 	plt.scatter(data[0], data[1], s=size, label=label, marker=marker)
 
 
+ 
