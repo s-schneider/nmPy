@@ -133,4 +133,9 @@ def _write_ah(stream, filename):
             #reset packer
             packer = None
 
+    else:
+
+        print("Input Stream not in AH format")
+
+
 

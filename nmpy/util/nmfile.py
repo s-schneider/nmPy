@@ -1,4 +1,5 @@
 from __future__ import absolute_import, print_function
+from nmpy.util.writeah import _write_ah
 import os
 
 def read_dat_folder(folder):
@@ -30,7 +31,8 @@ def safe_streamlist(streamlist, format='AH'):
 
 		fname = str(time.format_seed()).replace(",",".") + "." + network + "." + name + "." + location + "." + quality + "." + format
 
-		try:
+		if format not in ['AH', 'ah']:
 			station.write(fname, format=format)
-		except:
-			continue
+		else:
+			print(fname)
+			_write_ah(station, fname)
