@@ -9,7 +9,7 @@ import numpy as np
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util.attribdict import AttribDict
 
-def _write_ah(stream):
+def _write_ah(stream, filename):
     """
     Reads an AH v1 waveform file and returns a Stream object.
 
@@ -19,14 +19,8 @@ def _write_ah(stream):
     :returns: Stream with Traces specified by given file.
     """
 
-    def _pack_trace(stream):
-        ah_stats = AttribDict({
-            'version': '1.0',
-            'event': AttribDict(),
-            'station': AttribDict(),
-            'record': AttribDict(),
-            'extras': []
-        })
+    def _pack_trace(trace, packer):
+
 
         # station info
         packer.pack_string(tr.stats.ah.station.code)
@@ -62,68 +56,52 @@ def _write_ah(stream):
             packer.pack_float(i)           
 
         # event info
-
         packer.pack_float(tr.stats.ah.event.latitude)
         packer.pack_float(tr.stats.ah.event.longitude)
         packer.pack_float(tr.stats.ah.event.depth)
+        packer.pack_int(tr.stats.ah.event.origin_time.year)
+        packer.pack_int(tr.stats.ah.event.origin_time.month)
+        packer.pack_int(tr.stats.ah.event.origin_time.day)
+        packer.pack_int(tr.stats.ah.event.origin_time.hour)
+        packer.pack_int(tr.stats.ah.event.origin_time.minute)
+        packer.pack_float(tr.stats.ah.event.origin_time.second)
+        packer.pack_string(tr.stats.ah.event.comment)
 
-
-
-        # ah_stats.event.latitude = data.unpack_float()
-        # ah_stats.event.longitude = data.unpack_float()
-        # ah_stats.event.depth = data.unpack_float()
-        # ot_year = data.unpack_int()
-        # ot_mon = data.unpack_int()
-        # ot_day = data.unpack_int()
-        # ot_hour = data.unpack_int()
-        # ot_min = data.unpack_int()
-        # ot_sec = data.unpack_float()
-        # try:
-        #     ot = UTCDateTime(ot_year, ot_mon, ot_day, ot_hour, ot_min, ot_sec)
-        # except:
-        #     ot = None
-        # ah_stats.event.origin_time = ot
-        # ah_stats.event.comment = _unpack_string(data)
-
-        # # record info
-        # ah_stats.record.type = dtype = data.unpack_int()  # data type
-        # ah_stats.record.ndata = ndata = data.unpack_uint()  # number of samples
-        # ah_stats.record.delta = data.unpack_float()  # sampling interval
-        # ah_stats.record.max_amplitude = data.unpack_float()
-        # at_year = data.unpack_int()
-        # at_mon = data.unpack_int()
-        # at_day = data.unpack_int()
-        # at_hour = data.unpack_int()
-        # at_min = data.unpack_int()
-        # at_sec = data.unpack_float()
-        # at = UTCDateTime(at_year, at_mon, at_day, at_hour, at_min, at_sec)
-        # ah_stats.record.start_time = at
-        # ah_stats.record.abscissa_min = data.unpack_float()
-        # ah_stats.record.comment = _unpack_string(data)
-        # ah_stats.record.log = _unpack_string(data)
+        # record info
+        dtype = tr.stats.ah.record.type
+        packer.pack_int(dtype)
+        ndata = tr.stats.ah.record.ndata
+        packer.pack_uint(ndata)
+        packer.pack_float(tr.stats.ah.record.delta)
+        packer.pack_float(tr.stats.ah.record.max_amplitude)
+        packer.pack_int(tr.stats.ah.record.start_time.year)
+        packer.pack_int(tr.stats.ah.record.start_time.month)
+        packer.pack_int(tr.stats.ah.record.start_time.day)
+        packer.pack_int(tr.stats.ah.record.start_time.hour)
+        packer.pack_int(tr.stats.ah.record.start_time.minute)
+        packer.pack_float(tr.stats.ah.record.start_time.second)
+        packer.pack_float(tr.stats.ah.record.abscissa_min)
+        packer.pack_string(tr.stats.ah.record.comment)
+        packer.pack_string(tr.stats.ah.record.log)
 
         # # extras
-        # ah_stats.extras = data.unpack_array(data.unpack_float)
+        packer.pack_array(tr.stats.ah.extras, packer.pack_float)
 
-        # # unpack data using dtype from record info
-        # if dtype == 1:
-        #     # float
-        #     temp = data.unpack_farray(ndata, data.unpack_float)
-        # elif dtype == 6:
-        #     # double
-        #     temp = data.unpack_farray(ndata, data.unpack_double)
-        # else:
-        #     # e.g. 3 (vector), 2 (complex), 4 (tensor)
-        #     msg = 'Unsupported AH v1 record type %d'
-        #     raise NotImplementedError(msg % (dtype))
-        # tr = Trace(np.array(temp))
-        # tr.stats.ah = ah_stats
-        # tr.stats.delta = ah_stats.record.delta
-        # tr.stats.starttime = ah_stats.record.start_time
-        # tr.stats.station = ah_stats.station.code
-        # tr.stats.channel = ah_stats.station.channel
+        # pack data using dtype from record info
+        if dtype == 1:
+            # float
+            packer.pack_farray(ndata, tr.data, packer.pack_float)
+        elif dtype == 6:
+            # double
+            packer.pack_farray(ndata, tr.data, packer.pack_double)
+        else:
+            # e.g. 3 (vector), 2 (complex), 4 (tensor)
+            msg = 'Unsupported AH v1 record type %d'
+            raise NotImplementedError(msg % (dtype))
 
-    packer = xdrlib.Packer()
+        return packer
+
+
 
     for tr in stream:
         if tr.stats._format in ('AH'):
@@ -132,6 +110,27 @@ def _write_ah(stream):
             ahform = False
 
     if ahform:
-        for tr in stream:
-            _pack_trace(tr, packer)
+        
+        for i, tr in enumerate(stream):
+            ofilename = filename + str(i) + ".AH"
+
+            packer = xdrlib.Packer()
+            #write Version number: here V1
+            magic = 6
+            packer.pack_int(magic)
+            with open(ofilename, 'wb') as fh:
+                fh.write(packer.get_buffer())
+
+            #reinitialize packer
+            packer = None
+            packer = xdrlib.Packer()
+
+            packer = _pack_trace(tr, packer)
+
+            with open(ofilename, 'ab') as fh:
+                fh.write(packer.get_buffer())
+
+            #reset packer
+            packer = None
+
 
