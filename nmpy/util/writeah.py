@@ -23,8 +23,14 @@ def _write_ah(stream, filename):
 
 
         # station info
-        packer.pack_string(tr.stats.ah.station.code)
-        packer.pack_string(tr.stats.ah.station.channel)
+        try:
+            packer.pack_string(tr.stats.station)
+            packer.pack_string(tr.stats.channel)
+        except:
+            print('Input from original AH file')
+            packer.pack_string(tr.stats.ah.station.code)
+            packer.pack_string(tr.stats.ah.station.channel)
+
         packer.pack_string(tr.stats.ah.station.type)
         packer.pack_float(tr.stats.ah.station.latitude)
         packer.pack_float(tr.stats.ah.station.longitude)
@@ -112,26 +118,29 @@ def _write_ah(stream, filename):
     if ahform:
         
         for i, tr in enumerate(stream):
-            ofilename = filename + str(i) + ".AH"
+            try:
+                ofilename = filename + str(i+1) + ".AH"
 
-            packer = xdrlib.Packer()
-            #write Version number: here V1
-            magic = 6
-            packer.pack_int(magic)
-            with open(ofilename, 'wb') as fh:
-                fh.write(packer.get_buffer())
+                packer = xdrlib.Packer()
+                #write Version number: here V1
+                magic = 6
+                packer.pack_int(magic)
+                with open(ofilename, 'wb') as fh:
+                    fh.write(packer.get_buffer())
 
-            #reinitialize packer
-            packer = None
-            packer = xdrlib.Packer()
+                #reinitialize packer
+                packer = None
+                packer = xdrlib.Packer()
 
-            packer = _pack_trace(tr, packer)
+                packer = _pack_trace(tr, packer)
 
-            with open(ofilename, 'ab') as fh:
-                fh.write(packer.get_buffer())
+                with open(ofilename, 'ab') as fh:
+                    fh.write(packer.get_buffer())
 
-            #reset packer
-            packer = None
+                #reset packer
+                packer = None
+            except:
+                continue
 
     else:
 
