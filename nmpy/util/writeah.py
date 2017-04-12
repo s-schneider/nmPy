@@ -65,12 +65,21 @@ def _write_ah(stream, filename):
         packer.pack_float(tr.stats.ah.event.latitude)
         packer.pack_float(tr.stats.ah.event.longitude)
         packer.pack_float(tr.stats.ah.event.depth)
-        packer.pack_int(tr.stats.ah.event.origin_time.year)
-        packer.pack_int(tr.stats.ah.event.origin_time.month)
-        packer.pack_int(tr.stats.ah.event.origin_time.day)
-        packer.pack_int(tr.stats.ah.event.origin_time.hour)
-        packer.pack_int(tr.stats.ah.event.origin_time.minute)
-        packer.pack_float(tr.stats.ah.event.origin_time.second)
+        try:
+            packer.pack_int(tr.stats.ah.event.origin_time.year)
+            packer.pack_int(tr.stats.ah.event.origin_time.month)
+            packer.pack_int(tr.stats.ah.event.origin_time.day)
+            packer.pack_int(tr.stats.ah.event.origin_time.hour)
+            packer.pack_int(tr.stats.ah.event.origin_time.minute)
+            packer.pack_float(tr.stats.ah.event.origin_time.second)
+        except:
+            packer.pack_int(0)
+            packer.pack_int(0)
+            packer.pack_int(0)
+            packer.pack_int(0)
+            packer.pack_int(0)
+            packer.pack_float(0)
+
         packer.pack_string(tr.stats.ah.event.comment)
 
         # record info
@@ -116,29 +125,21 @@ def _write_ah(stream, filename):
             ahform = False
 
     if ahform:
-        
-        for i, tr in enumerate(stream):
-            try:
-                ofilename = filename + str(i+1) + ".AH"
+        packer = xdrlib.Packer()
 
-                packer = xdrlib.Packer()
-                #write Version number: here V1
+        for tr in stream:
+            try:
+                ofilename = filename + "." + tr.stats.channel + ".AH"
                 magic = 6
+
+                packer.reset()
                 packer.pack_int(magic)
+                packer = _pack_trace(tr, packer)
+
                 with open(ofilename, 'wb') as fh:
                     fh.write(packer.get_buffer())
 
-                #reinitialize packer
-                packer = None
-                packer = xdrlib.Packer()
-
-                packer = _pack_trace(tr, packer)
-
-                with open(ofilename, 'ab') as fh:
-                    fh.write(packer.get_buffer())
-
                 #reset packer
-                packer = None
             except:
                 continue
 
