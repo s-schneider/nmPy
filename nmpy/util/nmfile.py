@@ -1,5 +1,5 @@
 from __future__ import absolute_import, print_function
-from nmpy.util.writeah import _write_ah
+from nmpy.util.writeah import _write_ah1
 import os
 
 def read_dat_folder(folder):
@@ -14,7 +14,7 @@ def read_dat_folder(folder):
 
 	return flist
 
-def safe_streamlist(streamlist, format='AH'):
+def save_streamlist(streamlist, format='AH'):
 
 	for station in streamlist:
 		time  = station[0].stats.starttime
@@ -35,4 +35,4 @@ def safe_streamlist(streamlist, format='AH'):
 			station.write(fname, format=format)
 		else:
 			print(fname)
-			_write_ah(station, fname)
+			_write_ah1(station, fname)
