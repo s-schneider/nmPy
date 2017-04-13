@@ -30,20 +30,13 @@ def _write_ah1(stream, filename):
     NEXTRAS   = 21
     NOCALPTS  = 30
 
-    def _pack_trace(trace, packer):
+    def _pack_trace_with_ah_dict(trace, packer):
 
         # station info
-        try:
-            packer.pack_int(CODESIZE)
-            packer.pack_fstring(CODESIZE, tr.stats.station)
-            packer.pack_int(CHANSIZE)
-            packer.pack_fstring(CHANSIZE, tr.stats.channel)
-        except:
-            print('Input from original AH file')
-            packer.pack_int(CODESIZE)
-            packer.pack_fstring(CODESIZE, tr.stats.ah.station.code)
-            packer.pack_int(CHANSIZE)
-            packer.pack_fstring(CHANSIZE, tr.stats.ah.station.channel)
+        packer.pack_int(CODESIZE)
+        packer.pack_fstring(CODESIZE, tr.stats.ah.station.code)
+        packer.pack_int(CHANSIZE)
+        packer.pack_fstring(CHANSIZE, tr.stats.ah.station.channel)
 
         packer.pack_int(STYPESIZE)
         packer.pack_fstring(STYPESIZE,tr.stats.ah.station.type)
@@ -102,7 +95,7 @@ def _write_ah1(stream, filename):
         # record info
         dtype = tr.stats.ah.record.type
         packer.pack_int(dtype)
-        ndata = tr.stats.ah.record.ndata
+        ndata = tr.stats.npts
         packer.pack_uint(ndata)
         packer.pack_float(tr.stats.ah.record.delta)
         packer.pack_float(tr.stats.ah.record.max_amplitude)
@@ -135,34 +128,102 @@ def _write_ah1(stream, filename):
 
         return packer
 
+    def _pack_trace_wout_ah_dict(trace, packer):
+        # Entry are packed in the same order as shown in _pack_trace_with_ah_dict
+        # The missing information is replaced with zeros
+        # station info
+        packer.pack_int(CODESIZE)
+        packer.pack_fstring(CODESIZE, tr.stats.station)
+        packer.pack_int(CHANSIZE)
+        packer.pack_fstring(CHANSIZE, tr.stats.channel)
+        packer.pack_int(STYPESIZE)
+        packer.pack_fstring(STYPESIZE,'null')
+        # There is no information about latitude, longitude, elevation, 
+        # gain and normalization in the basic stream object,  are set to 0
+        packer.pack_float(0)
+        packer.pack_float(0)
+        packer.pack_float(0)
+        packer.pack_float(0)
+        packer.pack_float(0)
 
+        #Poles and Zeros are not provided by stream object, are set to 0
+        for _i in range(0,30):
+            packer.pack_float(0)
+            packer.pack_float(0)
+            packer.pack_float(0)
+            packer.pack_float(0)           
+
+        # event info
+        packer.pack_float(0)
+        packer.pack_float(0)
+        packer.pack_float(0)
+        packer.pack_int(0)
+        packer.pack_int(0)
+        packer.pack_int(0)
+        packer.pack_int(0)
+        packer.pack_int(0)
+        packer.pack_float(0)
+
+        packer.pack_int(COMSIZE)
+        packer.pack_fstring(COMSIZE, 'null')
+
+        # record info
+        dtype = type(tr.data[0])
+        if '32' in str(dtype):
+            dtype = 1
+        elif '64' in str(dtype):
+            dtype = 6
+
+        packer.pack_int(dtype)
+        ndata = tr.stats.npts
+        packer.pack_uint(ndata)
+        packer.pack_float(tr.stats.delta)
+        packer.pack_float(max(tr.data))
+        packer.pack_int(tr.stats.starttime.year)
+        packer.pack_int(tr.stats.starttime.month)
+        packer.pack_int(tr.stats.starttime.day)
+        packer.pack_int(tr.stats.starttime.hour)
+        packer.pack_int(tr.stats.starttime.minute)
+
+        starttime_second = float(str(tr.stats.starttime.second) + '.' + str(tr.stats.starttime.microsecond))
+        packer.pack_float(starttime_second)
+
+        packer.pack_float(0)
+        packer.pack_int(COMSIZE)
+        packer.pack_fstring(COMSIZE, 'null')
+        packer.pack_int(LOGSIZE)
+        packer.pack_fstring(LOGSIZE, 'null')
+
+        # # extras
+        packer.pack_array(np.zeros(21).tolist(), packer.pack_float)
+
+        # pack data using dtype from record info
+        if dtype == 1:
+            # float
+            packer.pack_farray(ndata, tr.data, packer.pack_float)
+        elif dtype == 6:
+            # double
+            packer.pack_farray(ndata, tr.data, packer.pack_double)
+        else:
+            # e.g. 3 (vector), 2 (complex), 4 (tensor)
+            msg = 'Unsupported AH v1 record type %d'
+            raise NotImplementedError(msg % (dtype))
+
+        return packer
+
+
+
+    packer = xdrlib.Packer()
 
     for tr in stream:
-        if tr.stats._format in ('AH'):
-            ahform = True
+        ofilename = filename + "." + tr.stats.channel + ".AH"
+
+        packer.reset()
+
+        if hasattr(tr.stats, 'ah'):
+            packer = _pack_trace_with_ah_dict(tr, packer)
         else:
-            ahform = False
+            packer = _pack_trace_wout_ah_dict(tr, packer)
 
-    if ahform:
-        packer = xdrlib.Packer()
-
-        for tr in stream:
-            try:
-                ofilename = filename + "." + tr.stats.channel + ".AH"
-
-                packer.reset()
-                packer = _pack_trace(tr, packer)
-
-                with open(ofilename, 'wb') as fh:
-                    fh.write(packer.get_buffer())
-
-                #reset packer
-            except:
-                continue
-
-    else:
-
-        print("Input Stream not in AH format")
-
-
-
+        with open(ofilename, 'wb') as fh:
+            fh.write(packer.get_buffer())

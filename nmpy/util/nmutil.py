@@ -6,7 +6,7 @@ def rotate_stream(stream, rotation='NE->RT', only_3_components=True, merge=True)
 	"""
 	Sorts stream by stations and rotates them. If keep_all_components is False, only stations with records of Z, E, N component will be kept
 	"""
-	stationlist = split2stations(stream, merge=merge)
+	stationlist = split2stations(stream, merge)
 
 	for i, station in enumerate(stationlist):
 		if only_3_components:
