@@ -35,4 +35,4 @@ def save_streamlist(streamlist, format='AH'):
 			station.write(fname, format=format)
 		else:
 			print(fname)
-			_write_ah1(station, fname)
+			_write_ah1(station, fname, singlefiles=True)

@@ -1,13 +1,12 @@
 from __future__ import absolute_import, print_function
-from sipy.util.base import cut2shortest, split2stations
+from sipy.util.base import cut2shortest, split2stations, list2stream
 
 
-def rotate_stream(stream, rotation='NE->RT', merge=True):
+def rotate_stream(stream, rotation='NE->RT', merge=True, format='stream'):
 	"""
-	Sorts stream by stations and rotates them. If keep_all_components is False, only stations with records of Z, E, N component will be kept
+	Sorts stream by stations and rotates them. Returns a list of streams or a stream
 	"""
 	stl = split2stations(stream, merge)
-
 
 	for station in stl:
 		try:
@@ -18,4 +17,10 @@ def rotate_stream(stream, rotation='NE->RT', merge=True):
 
 		station.sort(['channel'])
 
-	return stl
+
+	if format ==  'stream':
+		st = list2stream(stl)
+	else:
+		st = stl
+
+	return st
