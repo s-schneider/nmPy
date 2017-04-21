@@ -2,7 +2,7 @@ from __future__ import absolute_import, print_function
 from sipy.util.base import cut2shortest, split2stations, list2stream
 
 
-def rotate_stream(stream, rotation='NE->RT', merge=True, format='stream'):
+def rotate_stream(stream, rotation='NE->RT', merge=False, format='stream'):
 	"""
 	Sorts stream by stations and rotates them. Returns a list of streams or a stream
 	"""
@@ -24,3 +24,4 @@ def rotate_stream(stream, rotation='NE->RT', merge=True, format='stream'):
 		st = stl
 
 	return st
+
