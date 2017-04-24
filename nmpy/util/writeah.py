@@ -9,7 +9,7 @@ import numpy as np
 from obspy import Stream, Trace, UTCDateTime
 from obspy.core.util.attribdict import AttribDict
 
-def _write_ah1(stream, filename, channelfiles=False):
+def _write_ah1(stream, filename, singlefiles=False):
     """
     Reads an AH v1 waveform file and returns a Stream object.
 
@@ -224,13 +224,13 @@ def _write_ah1(stream, filename, channelfiles=False):
         else:
             packer = _pack_trace_wout_ah_dict(tr, packer)
 
-        if channelfiles:
+        if singlefiles:
             ofilename = filename + "." + tr.stats.channel + ".AH"
             with open(ofilename, 'wb') as fh:
                 fh.write(packer.get_buffer())
             packer.reset()
 
-    if not channelfiles:
+    if not singlefiles:
         ofilename = filename + ".AH"
         with open(ofilename, 'wb') as fh:
             fh.write(packer.get_buffer())
